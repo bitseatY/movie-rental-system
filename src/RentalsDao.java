@@ -1,34 +1,38 @@
-import java.sql.Connection;
-import java.sql.Date;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 import java.time.LocalDate;    //https://github.com/bitseatY/movie-rental-system.git
+import java.time.LocalDateTime;
 
 public class RentalsDao {
     private Connection connection;
     public RentalsDao(Connection connection){
         this.connection=connection;
     }
-    public void  rent(String username, String movieTitle, LocalDate dueDate , int noCopiesRented) throws SQLException {
-        int userId=new UsersDao(connection).findUserId(username);
+    public void  rent(String customerName, String movieTitle, LocalDate dueDate) throws SQLException {
+        int customerId=new UsersDao(connection).findUserId(customerName);
         int movieId=new MoviesDao(connection).findMovieId(movieTitle);
-        String query;
-        if(userId!=0&&movieId!=0) {
-            query = "insert into rentals(m_id,c_id,due_date) values (?,?,?)";
+
+        if(customerId!=0&&movieId!=0) {
+            String query="call rent_a_movie(?,?,?)";
             try (PreparedStatement ps = connection.prepareStatement(query)) {
                 ps.setInt(1, movieId);
-                ps.setInt(2, userId);
-                ps.setDate(3, java.sql.Date.valueOf(dueDate));
+                ps.setInt(2, customerId);
+                ps.setDate(3, Date.valueOf(dueDate));
                 ps.executeUpdate();
             }
+        }
+    }
 
-            query = "call update_qty(?,?)";
+    public  void  returnMovie(String movieTitle,String customerName) throws SQLException{
+        int customerId=new UsersDao(connection).findUserId(customerName);
+        int movieId=new MoviesDao(connection).findMovieId(movieTitle);
+        if(customerId!=0&&movieId!=0) {
+            String query="call return_a_movie(?,?)";
             try (PreparedStatement ps = connection.prepareStatement(query)) {
                 ps.setInt(1, movieId);
-                ps.setInt(2, noCopiesRented);
+                ps.setInt(2, customerId);
                 ps.executeUpdate();
-            }
 
+            }
         }
     }
 

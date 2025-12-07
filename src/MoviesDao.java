@@ -12,8 +12,8 @@ public class MoviesDao {
         this.connection=connection;
     }
 
-    public void addMovie(String title, String description,String yearReleased, int numOfCopies,
-                         List<String> genres, List<String> actors, double cost  ) throws SQLException {
+    public void addNewMovie(String title, String description, String yearReleased, int numOfCopies,
+                            List<String> genres, List<String> actors, double cost  ) throws SQLException {
 
         String query="insert  into movies (title,description,year_released,no_copies) values (?,?,?,?)";
         try (PreparedStatement ps=connection.prepareStatement(query)){
@@ -48,14 +48,17 @@ public class MoviesDao {
             ps.setDouble(2,cost);
             ps.executeUpdate();
         }
-
-
-
-
-
-
-
     }
+
+    public void  addCopies(String title,int noCopies) throws SQLException{
+        String query="update available_copies set no=no + ? where id=? ;";
+        try (PreparedStatement ps=connection.prepareStatement(query)){
+            ps.setInt(1,noCopies);
+            ps.setInt(2,findMovieId(title));
+            ps.executeUpdate();
+        }
+    }
+
 
 
 

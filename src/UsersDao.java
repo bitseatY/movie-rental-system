@@ -19,20 +19,7 @@ public class UsersDao {
         }
     }
 
-    public void  addUser(String name,String password,String role) throws SQLException   {
-        String query="insert  into users (name,password,role) values (?,?,?)";
-        try (PreparedStatement ps=connection.prepareStatement(query)){
-            ps.setString(1,name);
-            ps.setString(2,password);
-            ps.setString(3,role);
-            ps.executeUpdate();
-        }
 
-
-
-
-
-    }
 
 
 }
