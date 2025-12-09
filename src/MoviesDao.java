@@ -6,7 +6,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 public class MoviesDao {
-    private Connection connection;
+    private final Connection connection;
 
     public MoviesDao(Connection connection){
         this.connection=connection;
@@ -15,15 +15,16 @@ public class MoviesDao {
     public void addNewMovie(String title, String description, String yearReleased, int numOfCopies,
                             List<String> genres, List<String> actors, double cost  ) throws SQLException {
 
-        String query="insert  into movies (title,description,year_released,no_copies) values (?,?,?,?)";
+        String query="insert  into movies (title,description,year_released,no_copies,cost_per_day) values (?,?,?,?,?)";
         try (PreparedStatement ps=connection.prepareStatement(query)){
             ps.setString(1,title);
             ps.setString(2,description);
             ps.setString(3,yearReleased);
             ps.setInt(4,numOfCopies);
+            ps.setDouble(5,cost);
             ps.executeUpdate();
         }
-        query="insert into genres (id,genre) values (?,?)";
+        query="insert into genres (movie_id,genre) values (?,?)";
         int id=findMovieId(title);
         if(id==0)
             return;
@@ -34,7 +35,7 @@ public class MoviesDao {
                 ps.executeUpdate();
             }
         }
-        query="insert into actors (id,actor) values (?,?)";
+        query="insert into actors (movie_id,actor) values (?,?)";
         for(String actor:actors){
             try (PreparedStatement ps=connection.prepareStatement(query)){
                 ps.setInt(1,id);
@@ -42,29 +43,17 @@ public class MoviesDao {
                 ps.executeUpdate();
             }
         }
-        query="insert into costs(id,cost_per_day) values (?,?)";
-        try (PreparedStatement ps=connection.prepareStatement(query)){
-            ps.setInt(1,id);
-            ps.setDouble(2,cost);
-            ps.executeUpdate();
-        }
+
     }
 
     public void  addCopies(String title,int noCopies) throws SQLException{
-        String query="update available_copies set no=no + ? where id=? ;";
+        String query="update available_copies set no_copies=no_copies + ? where movie_id=? ;";
         try (PreparedStatement ps=connection.prepareStatement(query)){
             ps.setInt(1,noCopies);
             ps.setInt(2,findMovieId(title));
             ps.executeUpdate();
         }
     }
-
-
-
-
-
-
-
 
 
     public int findMovieId(String title) throws SQLException {
@@ -78,14 +67,7 @@ public class MoviesDao {
         }
 
     }
-    public void returnMovie(String title) throws SQLException {
-        String query = "update movies set state='available' where title=?";
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
-            ps.setString(1, title);
-            ps.executeUpdate();
 
-        }
-    }
 
 
 
