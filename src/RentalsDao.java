@@ -18,15 +18,22 @@ public class RentalsDao {
     public void rent(String customerName, String movieTitle, LocalDate dueDate) throws SQLException {
         int customerId = new UsersDao(connection).findUserId(customerName);
         int movieId = new MoviesDao(connection).findMovieId(movieTitle);
-
         if (customerId != 0 && movieId != 0) {
-            String query = "call rent_a_movie(?,?,?)";
-            try (PreparedStatement ps = connection.prepareStatement(query)) {
-                ps.setInt(1, movieId);
-                ps.setInt(2, customerId);
-                ps.setDate(3, Date.valueOf(dueDate));
-                ps.executeUpdate();
+            connection.setAutoCommit(false);
+            try {
+                PreparedStatement ps1=connection.prepareStatement(" update available_copies set no_av_copies=no_av_copies-1 where movie_id= ?;");
+                ps1.setInt(1,movieId);
+                ps1.executeUpdate();
+                PreparedStatement ps2=connection.prepareStatement("  insert into rentals (movie_id,customer_id,due_date) values (?,?,?)");
+                ps2.setInt(1,movieId);
+                ps2.setInt(2,customerId);
+                ps2.setDate(3,Date.valueOf(dueDate));
+                ps2.executeUpdate();
+                connection.commit();
+            }catch (Exception e){
+                connection.rollback();
             }
+            connection.setAutoCommit(true);
         }
     }
 
@@ -35,21 +42,29 @@ public class RentalsDao {
         int movieId = new MoviesDao(connection).findMovieId(movieTitle);
         BigDecimal totalFee=getTotalFee(findFirstUnreturnedRentalId(movieId,customerId));
         if (customerId != 0 && movieId != 0&& !Objects.equals(totalFee, BigDecimal.ZERO)) {
-            String query = "call return_a_movie(?,?,?)";
-            try (PreparedStatement ps = connection.prepareStatement(query)) {
-                ps.setInt(1, movieId);
-                ps.setInt(2, customerId);
-                ps.setBigDecimal(3,totalFee);
-                ps.executeUpdate();
-
+            connection.setAutoCommit(false);
+            try {
+                PreparedStatement ps1=connection.prepareStatement("update rentals set date_returned=current_date()," +
+                        " total_fee_charged=? , is_returned='yes' where id=?");
+                ps1.setBigDecimal(1,totalFee);
+                ps1.setInt(2,findFirstUnreturnedRentalId(movieId,customerId));
+                ps1.executeUpdate();
+                PreparedStatement ps2=connection.prepareStatement("update available_copies set no_av_copies=no_av_copies+1 where movie_id=?");
+                ps2.setInt(1,movieId);
+                ps2.executeUpdate();
+                connection.commit();
+            }catch (Exception e){
+                System.out.println(1);
+                connection.rollback();
             }
+            connection.setAutoCommit(true);
         }
     }
 
     public int findFirstUnreturnedRentalId(int movieId, int customerId) throws SQLException {
         if (customerId != 0 && movieId != 0) {
             String query = "  select id from rentals where movie_id=? \n" +
-                    "    and customer_id= ? and date_returned is null order by id desc limit 1 ";
+                    "    and customer_id= ? and date_returned='9999-01-01' order by id desc limit 1 ";
 
             try (PreparedStatement ps = connection.prepareStatement(query)) {
                 ps.setInt(1, movieId);
@@ -62,6 +77,7 @@ public class RentalsDao {
 
             }
         }
+
         return 0;
     }
 

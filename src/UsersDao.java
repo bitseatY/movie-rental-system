@@ -4,7 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class UsersDao {
-    private Connection connection;
+    private final  Connection connection;
     public UsersDao(Connection connection){
         this.connection=connection;
     }
